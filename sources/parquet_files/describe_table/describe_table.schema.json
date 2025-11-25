@@ -1,1 +1,0 @@
-[{"name":"column_name","evidenceType":"string","typeFidelity":"inferred"},{"name":"data_type","evidenceType":"string","typeFidelity":"inferred"},{"name":"default_expression","evidenceType":"string","typeFidelity":"inferred"},{"name":"comment","evidenceType":"string","typeFidelity":"inferred"}]
