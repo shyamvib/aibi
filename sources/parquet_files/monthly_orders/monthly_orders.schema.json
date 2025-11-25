@@ -1,0 +1,1 @@
+[{"name":"month","evidenceType":"string","typeFidelity":"inferred"},{"name":"order_count","evidenceType":"string","typeFidelity":"inferred"},{"name":"total_amount","evidenceType":"number","typeFidelity":"inferred"},{"name":"average_order_value","evidenceType":"number","typeFidelity":"inferred"}]

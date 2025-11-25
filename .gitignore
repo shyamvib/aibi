@@ -1,0 +1,24 @@
+# Build directories
+.evidence/template
+.svelte-kit
+build
+node_modules
+
+# Generated data
+static/data
+
+# Deployment files
+deploy_*
+*.tar.gz
+
+# Environment and configuration
+*.options.yaml
+.vscode/settings.json
+.env
+.evidence/meta
+
+# OS files
+.DS_Store
+
+# Keep parquet files in version control
+!/sources/parquet_files/*.parquet

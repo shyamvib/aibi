@@ -1,0 +1,9 @@
+# This file was automatically generated
+type: clickhouse
+name: business_intelligence
+options:
+  url: http://10.6.2.34:18123
+  username: default
+# Advanced Options, you probably don't want to change this
+buildOptions:
+  batchSize: 1000000

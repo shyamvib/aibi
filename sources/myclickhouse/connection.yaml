@@ -1,0 +1,8 @@
+name: business_intelligence
+type: clickhouse
+options:
+  url: http://10.6.2.34:18123
+  username: default
+  password: vibrant
+  database: business_intelligence
+  request_timeout: 60000
