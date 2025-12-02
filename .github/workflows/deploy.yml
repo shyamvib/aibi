@@ -21,25 +21,18 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Generate parquet files
-        run: |
-          npm run sources
-          npm run flatten
-        env:
-          # Add your ClickHouse credentials here if needed
-          # EVIDENCE_SOURCE__business_intelligence__url: ${{ secrets.EVIDENCE_SOURCE__BUSINESS_INTELLIGENCE__URL }}
-          # EVIDENCE_SOURCE__business_intelligence__username: ${{ secrets.EVIDENCE_SOURCE__BUSINESS_INTELLIGENCE__USERNAME }}
-          # EVIDENCE_SOURCE__business_intelligence__password: ${{ secrets.EVIDENCE_SOURCE__BUSINESS_INTELLIGENCE__PASSWORD }}
+      # Skip generating parquet files - using pre-generated files from the repository
+      # Note: You must run 'npm run sources:all' locally and commit the parquet files before pushing
 
       - name: Build
         env:
-          BASE_PATH: '/aibi' # Replace with your repository name
+          BASE_PATH: '/aibi'
         run: npm run build
 
       - name: Upload Artifacts
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'build/aibi' # Replace with your repository name
+          path: 'build/aibi'
 
   deploy:
     needs: build
