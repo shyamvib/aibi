@@ -61,14 +61,35 @@ Access the dashboard at http://localhost:3000
 
 ## Deployment
 
-To deploy this dashboard to another server:
+### GitHub Pages Deployment
+
+This project is configured for automatic deployment to GitHub Pages:
+
+1. Push your code to GitHub
+2. Go to your repository settings and enable GitHub Pages with GitHub Actions
+3. The GitHub Action will automatically build and deploy your dashboard
+4. Your dashboard will be available at `https://[your-username].github.io/aibi`
+
+If you need to use ClickHouse credentials in the GitHub Actions workflow:
+
+1. Go to your GitHub repository settings
+2. Navigate to Secrets and Variables > Actions
+3. Add your ClickHouse credentials as secrets:
+   - `EVIDENCE_SOURCE__BUSINESS_INTELLIGENCE__URL`
+   - `EVIDENCE_SOURCE__BUSINESS_INTELLIGENCE__USERNAME`
+   - `EVIDENCE_SOURCE__BUSINESS_INTELLIGENCE__PASSWORD`
+4. Uncomment the corresponding lines in `.github/workflows/deploy.yml`
+
+### Manual Deployment
+
+To deploy this dashboard to another server manually:
 
 1. Clone this repository
 2. Install dependencies: `npm install`
 3. Configure the ClickHouse connection
 4. Generate parquet files: `npm run sources:all`
 5. Build the static site: `npm run build`
-6. Deploy the contents of the `.evidence/template` directory to your web server
+6. Deploy the contents of the `build/aibi` directory to your web server
 
 Alternatively, use the included deployment script:
 

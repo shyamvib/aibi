@@ -20,5 +20,9 @@ deploy_*
 # OS files
 .DS_Store
 
-# Keep parquet files in version control
-!/sources/parquet_files/*.parquet
+# Parquet files and schema files
+*.parquet
+*.schema.json
+sources/parquet_files/**/*.parquet
+sources/parquet_files/**/*.schema.json
+sources/parquet_files/*.parquet

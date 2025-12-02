@@ -21,7 +21,7 @@ npm run sources:all
 npm run build
 
 # Check if build was successful
-if [ ! -d ".evidence/template" ]; then
+if [ ! -d "build/aibi" ]; then
   echo "Build failed. Check for errors above."
   exit 1
 fi
@@ -33,7 +33,7 @@ DEPLOY_DIR="deploy_$TIMESTAMP"
 mkdir -p $DEPLOY_DIR
 
 # Copy necessary files
-cp -r .evidence/template/* $DEPLOY_DIR/
+cp -r build/aibi/* $DEPLOY_DIR/
 cp README.md $DEPLOY_DIR/
 cp package.json $DEPLOY_DIR/
 cp -r sources $DEPLOY_DIR/
