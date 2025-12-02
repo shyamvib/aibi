@@ -61,24 +61,52 @@ Access the dashboard at http://localhost:3000
 
 ## Deployment
 
-### GitHub Pages Deployment
+### GitHub Pages Deployment with Self-Hosted ClickHouse
 
-This project is configured for automatic deployment to GitHub Pages:
+Since your ClickHouse server is self-hosted and not accessible from GitHub Actions, we'll use pre-generated parquet files:
 
-1. Push your code to GitHub
-2. Go to your repository settings and enable GitHub Pages with GitHub Actions
-3. The GitHub Action will automatically build and deploy your dashboard
-4. Your dashboard will be available at `https://[your-username].github.io/aibi`
+1. **Generate parquet files locally**:
+   ```bash
+   npm run sources:all
+   ```
 
-If you need to use ClickHouse credentials in the GitHub Actions workflow:
+2. **Add and commit the parquet files**:
+   ```bash
+   git add sources/parquet_files/*.parquet sources/parquet_files/**/*.parquet sources/parquet_files/**/*.schema.json
+   git commit -m "Add pre-generated parquet files"
+   ```
 
-1. Go to your GitHub repository settings
-2. Navigate to Secrets and Variables > Actions
-3. Add your ClickHouse credentials as secrets:
-   - `EVIDENCE_SOURCE__BUSINESS_INTELLIGENCE__URL`
-   - `EVIDENCE_SOURCE__BUSINESS_INTELLIGENCE__USERNAME`
-   - `EVIDENCE_SOURCE__BUSINESS_INTELLIGENCE__PASSWORD`
-4. Uncomment the corresponding lines in `.github/workflows/deploy.yml`
+3. **Push your code to GitHub**:
+   ```bash
+   git push
+   ```
+
+4. **Enable GitHub Pages**:
+   - Go to your repository settings
+   - Click on "Pages" in the left sidebar
+   - Under "Build and deployment", select "GitHub Actions" as the source
+
+5. The GitHub Action will build and deploy your dashboard without needing to connect to your ClickHouse server
+
+6. Your dashboard will be available at `https://[your-username].github.io/aibi`
+
+**Note**: Whenever you want to update the data, you have two options:
+
+1. If you have access to the ClickHouse server:
+   ```bash
+   npm run sources:all
+   git add sources/parquet_files/*.parquet sources/parquet_files/**/*.parquet sources/parquet_files/**/*.schema.json
+   git commit -m "Update parquet files"
+   git push
+   ```
+
+2. If you want to use sample data (for testing or demo purposes):
+   ```bash
+   python create_sample_parquet.py
+   git add sources/parquet_files/*.parquet sources/parquet_files/**/*.parquet sources/parquet_files/**/*.schema.json
+   git commit -m "Update sample parquet files"
+   git push
+   ```
 
 ### Manual Deployment
 
