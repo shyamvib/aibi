@@ -1,0 +1,20 @@
+{
+  "fields": [
+    {
+      "name": "month",
+      "type": "string"
+    },
+    {
+      "name": "order_count",
+      "type": "integer"
+    },
+    {
+      "name": "total_amount",
+      "type": "number"
+    },
+    {
+      "name": "avg_order_value",
+      "type": "number"
+    }
+  ]
+}
