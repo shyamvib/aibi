@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  evidence-dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./sources:/app/sources
+      - ./.evidence:/app/.evidence
+      - ./pages:/app/pages
+    environment:
+      - NODE_ENV=development
+      - HOST=0.0.0.0
+      - ORIGIN=http://localhost:3000
+    command: npm run dev -- --host 0.0.0.0
+    network_mode: "host"

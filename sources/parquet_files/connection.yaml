@@ -1,4 +1,4 @@
 name: parquet_files
 type: parquet
 options:
-  directory: /Users/shyam.n/dsa/aibi/sources/parquet_files
+  directory: /app/sources/parquet_files

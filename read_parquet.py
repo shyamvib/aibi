@@ -24,7 +24,7 @@ def read_parquet_file(file_path):
 
 def main():
     # Define the directory containing the parquet files
-    base_dir = Path("/Users/shyam.n/dsa/aibi/.evidence/template/static/data/myclickhouse")
+    base_dir = Path("/app/.evidence/template/static/data/myclickhouse")
     
     # If a specific file is provided as an argument, read only that file
     if len(sys.argv) > 1:

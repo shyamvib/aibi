@@ -1,0 +1,6 @@
+node_modules
+npm-debug.log
+venv
+.git
+.gitignore
+.evidence/template

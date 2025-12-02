@@ -22,3 +22,6 @@ deploy_*
 
 # Keep parquet files in version control
 !/sources/parquet_files/*.parquet
+
+/sources/business_intelligence/connection.yaml
+/sources/parquet_files/connection.yaml

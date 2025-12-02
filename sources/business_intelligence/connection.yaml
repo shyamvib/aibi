@@ -4,6 +4,9 @@ name: business_intelligence
 options:
   url: http://10.6.2.34:18123
   username: default
+  password: vibrant
+  database: business_intelligence
+  request_timeout: 60000
 # Advanced Options, you probably don't want to change this
 buildOptions:
   batchSize: 1000000

@@ -30,6 +30,6 @@ def convert_parquet_to_csv(parquet_dir, csv_dir):
                 print(f"Error converting {parquet_file}: {e}")
 
 if __name__ == "__main__":
-    parquet_dir = "/Users/shyam.n/dsa/aibi/.evidence/template/static/data/myclickhouse"
-    csv_dir = "/Users/shyam.n/dsa/aibi/sources/csv_data"
+    parquet_dir = "/app/.evidence/template/static/data/myclickhouse"
+    csv_dir = "/app/sources/csv_data"
     convert_parquet_to_csv(parquet_dir, csv_dir)
