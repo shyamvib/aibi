@@ -1,0 +1,4 @@
+name: csv_data
+type: csv
+options:
+  directory: ./sources/csv

@@ -2,7 +2,6 @@
 title: RSM Detail View
 ---
 
-
 ```sql rsm_data
 SELECT * FROM rsm_performance_data
 ```
@@ -17,7 +16,7 @@ GROUP BY rsm_name
 ORDER BY total_revenue DESC
 ```
 
-<Dropdown name=selected_rsm data={rsm_summary} value=rsm_name>
+<Dropdown name=selected_rsm data={rsm_summary} value=rsm_name title="Select an RSM">
   <DropdownOption value="ALL" valueLabel="All RSMs"/>
 </Dropdown>
 
@@ -59,6 +58,86 @@ ORDER BY customer_segment, support_status DESC
   format=","
 />
 
+```sql segment_correlations
+WITH segment_correlation AS (
+    SELECT 
+        customer_segment,
+        support_status,
+        CORR(touchpoints_per_customer, revenue_per_customer) as correlation,
+        AVG(touchpoints_per_customer) as avg_touchpoints,
+        AVG(revenue_per_customer) as avg_revenue,
+        COUNT(*) as data_points
+    FROM (
+        SELECT 
+            month_label,
+            month_date,
+            customer_segment,
+            support_status,
+            SUM(CAST(revenue AS DOUBLE)) as segment_revenue,
+            SUM(CAST(total_calls AS INTEGER)) as calls,
+            SUM(CAST(total_meetings AS INTEGER)) as meetings,
+            SUM(CAST(total_calls AS INTEGER) + CAST(total_meetings AS INTEGER)) as total_touchpoints,
+            SUM(CAST(active_customers_this_month AS INTEGER)) as customers,
+            ROUND(SUM(CAST(total_calls AS INTEGER) + CAST(total_meetings AS INTEGER)) / 
+                NULLIF(SUM(CAST(active_customers_this_month AS INTEGER)), 0), 1) as touchpoints_per_customer,
+            ROUND(SUM(CAST(revenue AS DOUBLE)) / 
+                NULLIF(SUM(CAST(active_customers_this_month AS INTEGER)), 0), 0) as revenue_per_customer
+        FROM rsm_monthly_performance
+        WHERE rsm_name = '${inputs.selected_rsm.value}'
+        GROUP BY month_label, month_date, customer_segment, support_status
+        ORDER BY month_date
+    )
+    WHERE customers > 0
+    GROUP BY customer_segment, support_status
+)
+SELECT 
+    customer_segment,
+    support_status,
+    ROUND(correlation * 100, 1) as correlation_percent,
+    CASE 
+        WHEN correlation >= 0.7 THEN 'Strong Positive'
+        WHEN correlation >= 0.5 THEN 'Moderate Positive'
+        WHEN correlation >= 0.3 THEN 'Weak Positive'
+        WHEN correlation >= -0.3 THEN 'No Clear Correlation'
+        WHEN correlation >= -0.5 THEN 'Weak Negative'
+        WHEN correlation >= -0.7 THEN 'Moderate Negative'
+        ELSE 'Strong Negative'
+    END as correlation_strength,
+    CASE 
+        WHEN correlation >= 0.7 THEN 'var(--color-green-600)'
+        WHEN correlation >= 0.5 THEN 'var(--color-green-400)'
+        WHEN correlation >= 0.3 THEN 'var(--color-green-200)'
+        WHEN correlation >= -0.3 THEN 'var(--color-gray-500)'
+        WHEN correlation >= -0.5 THEN 'var(--color-red-200)'
+        WHEN correlation >= -0.7 THEN 'var(--color-red-400)'
+        ELSE 'var(--color-red-600)'
+    END as color_code,
+    ROUND(avg_touchpoints, 1) as avg_touchpoints,
+    ROUND(avg_revenue, 0) as avg_revenue,
+    data_points
+FROM segment_correlation
+ORDER BY correlation DESC
+```
+
+```sql existing_correlation
+SELECT * FROM ${segment_correlations}
+WHERE customer_segment = 'Existing (Pre-2025)'
+```
+
+```sql repeat_correlation
+SELECT * FROM ${segment_correlations}
+WHERE customer_segment = 'Repeat (2025)'
+```
+
+```sql one_timer_correlation
+SELECT * FROM ${segment_correlations}
+WHERE customer_segment = 'One-Timer (2025)'
+```
+
+
+
+### Revenue Breakdown
+
 <BigValue
   data={rsm_metrics}
   value=existing_revenue
@@ -80,6 +159,8 @@ ORDER BY customer_segment, support_status DESC
   format="$,.2f"
 />
 
+### Revenue Breakdown %
+
 <BigValue
   data={rsm_metrics}
   value=existing_revenue_percent
@@ -100,6 +181,8 @@ ORDER BY customer_segment, support_status DESC
   title="% of Total Revenue"
   format=".1f%"
 />
+
+### Customer Breakdown
 
 <BigValue
   data={rsm_metrics}
@@ -167,44 +250,7 @@ ORDER BY customer_segment, support_status DESC
   format=".1f"
 />
 
-<!-- ### Lead Conversion Metrics
 
-<BigValue
-  data={lead_conversion_metrics}
-  value=lead_to_customer_rate
-  title="Lead to Customer Rate"
-  format=".1f%"
-/>
-
-<BigValue
-  data={lead_conversion_metrics}
-  value=lead_to_supported_customer_rate
-  title="Lead to Supported Customer Rate"
-  format=".1f%"
-/>
-
-<BigValue
-  data={lead_conversion_metrics}
-  value=lead_to_customer_engagement_ratio
-  title="Lead:Customer Engagement Ratio"
-  format=".1f:1"
-/> -->
-
-```sql rsm_detail_with_averages
-SELECT 
-    customer_segment,
-    support_status,
-    customers,
-    orders,
-    calls,
-    meetings,
-    revenue,
-    aov,
-    revenue_percent,
-    ROUND(calls / NULLIF(customers, 0), 1) as avg_calls_per_customer,
-    ROUND(meetings / NULLIF(customers, 0), 1) as avg_meetings_per_customer
-FROM ${rsm_detail}
-```
 
 ### Customer Composition
 
@@ -351,6 +397,151 @@ ORDER BY
   valueFormat=".1f%"
 />
 
+
+### Engagement-Revenue Correlation
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px;">
+  <div style="flex: 1; min-width: 200px;">
+    <BigValue
+      data={existing_correlation.filter(d => d.support_status === 'With Support')}
+      value=correlation_percent
+      title="Existing Customers (With Support)"
+      subtitle="Calls/Meetings to Revenue Correlation"
+      format=".1f%"
+      color=color_code
+    />
+  </div>
+  <div style="flex: 1; min-width: 200px;">
+    <BigValue
+      data={repeat_correlation.filter(d => d.support_status === 'With Support')}
+      value=correlation_percent
+      title="Repeat Customers (With Support)"
+      subtitle="Calls/Meetings to Revenue Correlation"
+      format=".1f%"
+      color=color_code
+    />
+  </div>
+  <div style="flex: 1; min-width: 200px;">
+    <BigValue
+      data={one_timer_correlation.filter(d => d.support_status === 'With Support')}
+      value=correlation_percent
+      title="One-Time Customers (With Support)"
+      subtitle="Calls/Meetings to Revenue Correlation"
+      format=".1f%"
+      color=color_code
+    />
+  </div>
+</div>
+
+```sql overview_correlation_stats
+SELECT 
+    customer_segment,
+    support_status,
+    correlation * 100 as correlation_percent,
+    CASE 
+        WHEN correlation >= 0.7 THEN 'Strong Positive'
+        WHEN correlation >= 0.5 THEN 'Moderate Positive'
+        WHEN correlation >= 0.3 THEN 'Weak Positive'
+        WHEN correlation >= -0.3 THEN 'No Clear Correlation'
+        WHEN correlation >= -0.5 THEN 'Weak Negative'
+        WHEN correlation >= -0.7 THEN 'Moderate Negative'
+        ELSE 'Strong Negative'
+    END as correlation_strength,
+    ROUND(avg_touchpoints, 1) as avg_touchpoints,
+    ROUND(avg_revenue, 0) as avg_revenue,
+    data_points
+FROM (
+    SELECT 
+        customer_segment,
+        support_status,
+        CORR(touchpoints_per_customer, revenue_per_customer) as correlation,
+        AVG(touchpoints_per_customer) as avg_touchpoints,
+        AVG(revenue_per_customer) as avg_revenue,
+        COUNT(*) as data_points
+    FROM (
+        SELECT 
+            month_label,
+            month_date,
+            customer_segment,
+            support_status,
+            SUM(CAST(revenue AS DOUBLE)) as segment_revenue,
+            SUM(CAST(total_calls AS INTEGER)) as calls,
+            SUM(CAST(total_meetings AS INTEGER)) as meetings,
+            SUM(CAST(total_calls AS INTEGER) + CAST(total_meetings AS INTEGER)) as total_touchpoints,
+            SUM(CAST(active_customers_this_month AS INTEGER)) as customers,
+            ROUND(SUM(CAST(total_calls AS INTEGER) + CAST(total_meetings AS INTEGER)) / 
+                NULLIF(SUM(CAST(active_customers_this_month AS INTEGER)), 0), 1) as touchpoints_per_customer,
+            ROUND(SUM(CAST(revenue AS DOUBLE)) / 
+                NULLIF(SUM(CAST(active_customers_this_month AS INTEGER)), 0), 0) as revenue_per_customer
+        FROM rsm_monthly_performance
+        WHERE rsm_name = '${inputs.selected_rsm.value}'
+        GROUP BY month_label, month_date, customer_segment, support_status
+        ORDER BY month_date
+    )
+    WHERE customers > 0
+    GROUP BY customer_segment, support_status
+)
+ORDER BY correlation DESC
+```
+
+<DataTable 
+  data={overview_correlation_stats}
+  title="Engagement Impact on Revenue"
+>
+  <Column id=customer_segment name="Customer Segment" />
+  <Column id=support_status name="Support Status" />
+  <Column id=correlation_percent format=".1f%" 
+    contentType=colorscale 
+    colorScale={['#ce5050','white','#6db678']} 
+    colorScaleMin={-100} 
+    colorScaleMax={100}
+    name="Correlation %" />
+  <Column id=correlation_strength name="Correlation Strength" />
+  <Column id=avg_touchpoints name="Avg Touchpoints" />
+  <Column id=avg_revenue format="$,.0f" name="Avg Revenue" />
+  <Column id=data_points name="Data Points" />
+</DataTable>
+
+<!-- ### Lead Conversion Metrics
+
+<BigValue
+  data={lead_conversion_metrics}
+  value=lead_to_customer_rate
+  title="Lead to Customer Rate"
+  format=".1f%"
+/>
+
+<BigValue
+  data={lead_conversion_metrics}
+  value=lead_to_supported_customer_rate
+  title="Lead to Supported Customer Rate"
+  format=".1f%"
+/>
+
+<BigValue
+  data={lead_conversion_metrics}
+  value=lead_to_customer_engagement_ratio
+  title="Lead:Customer Engagement Ratio"
+  format=".1f:1"
+/> -->
+
+```sql rsm_detail_with_averages
+SELECT 
+    customer_segment,
+    support_status,
+    customers,
+    orders,
+    calls,
+    meetings,
+    revenue,
+    aov,
+    revenue_percent,
+    ROUND(calls / NULLIF(customers, 0), 1) as avg_calls_per_customer,
+    ROUND(meetings / NULLIF(customers, 0), 1) as avg_meetings_per_customer
+FROM ${rsm_detail}
+```
+
+
 </Tab>
 
 <Tab id="monthly_trends" label="Monthly Trends">
@@ -446,16 +637,160 @@ GROUP BY year, month_number, month_label, month_date, rsm_name
 ORDER BY month_date
 ```
 
-<LineChart
-  data={monthly_trend}
-  x="month_label"
-  y="monthly_revenue"
-  y_fmt="usd"
-  yAxisTitle="Revenue"
-  title="Monthly Revenue Trend"
-  formatY="$,.0f"
-  xSort="asc"
-/>
+<!-- <DataTable data={monthly_trend} title="Monthly Revenue Trend">
+  <Column id=month_label />
+  <Column id=monthly_revenue format="$,.0f" 
+    contentType=colorscale 
+    colorScale={['#ce5050','white','#6db678']} 
+    colorScaleMin=0 />
+  <Column id=monthly_orders format=",.0f" 
+    contentType=colorscale 
+    colorScale={['#ce5050','white','#6db678']} 
+    colorScaleMin=0 />
+  <Column id=monthly_customers format=",.0f" 
+    contentType=colorscale 
+    colorScale={['#ce5050','white','#6db678']} 
+    colorScaleMin=0 />
+</DataTable> -->
+
+
+<ButtonGroup name="support_filter">
+  <ButtonGroupItem value="With Support" valueLabel="With Support" />
+  <ButtonGroupItem value="No Support" valueLabel="No Support" />
+</ButtonGroup>
+
+```sql monthly_segment_trend
+SELECT 
+    year,
+    month_label,
+    month_date,
+    rsm_name,
+    customer_segment,
+    support_status,
+    SUM(CAST(revenue AS DOUBLE)) as segment_revenue
+FROM ${rsm_monthly_data}
+WHERE rsm_name = '${inputs.selected_rsm.value}'
+    AND (support_status = '${inputs.support_filter}' OR '${inputs.support_filter}' = 'All')
+GROUP BY year, month_label, month_date, rsm_name, customer_segment, support_status
+ORDER BY month_date
+```
+
+```sql monthly_segment_pivot
+SELECT 
+    month_label,
+    month_date,
+    MAX(CASE WHEN customer_segment = 'Existing (Pre-2025)' THEN segment_revenue END) as existing_revenue,
+    MAX(CASE WHEN customer_segment = 'Repeat (2025)' THEN segment_revenue END) as repeat_revenue,
+    MAX(CASE WHEN customer_segment = 'One-Timer (2025)' THEN segment_revenue END) as one_time_revenue
+FROM ${monthly_segment_trend}
+GROUP BY month_label, month_date
+ORDER BY month_date
+```
+
+<DataTable data={monthly_segment_pivot} title="Monthly Revenue by Customer Segment (${inputs.support_filter === 'All' ? 'All Support Status' : inputs.support_filter})">
+  <Column id=month_label />
+  <Column id=existing_revenue format="$,.0f" 
+    contentType=colorscale 
+    colorScale={['#ce5050','white','#6db678']} 
+    colorScaleMin=0 
+    name="Existing (Pre-2025)" />
+  <Column id=repeat_revenue format="$,.0f" 
+    contentType=colorscale 
+    colorScale={['#ce5050','white','#6db678']} 
+    colorScaleMin=0 
+    name="Repeat (2025)" />
+  <Column id=one_time_revenue format="$,.0f" 
+    contentType=colorscale 
+    colorScale={['#ce5050','white','#6db678']} 
+    colorScaleMin=0 
+    name="One-Time (2025)" />
+</DataTable>
+
+```sql calls_meetings_data
+SELECT 
+    m.month_label,
+    m.month_date,
+    'Calls' as metric,
+    m.monthly_calls as value,
+    'All Segments' as segment
+FROM ${monthly_trend} m
+UNION ALL
+SELECT 
+    m.month_label,
+    m.month_date,
+    'Meetings' as metric,
+    m.monthly_meetings as value,
+    'All Segments' as segment
+FROM ${monthly_trend} m
+UNION ALL
+SELECT 
+    m.month_label,
+    m.month_date,
+    'Calls' as metric,
+    SUM(CAST(d.total_calls AS INTEGER)) as value,
+    d.customer_segment as segment
+FROM ${rsm_monthly_data} d
+JOIN ${monthly_trend} m ON d.month_date = m.month_date AND d.rsm_name = m.rsm_name
+WHERE d.rsm_name = '${inputs.selected_rsm.value}'
+GROUP BY m.month_label, m.month_date, d.customer_segment
+UNION ALL
+SELECT 
+    m.month_label,
+    m.month_date,
+    'Meetings' as metric,
+    SUM(CAST(d.total_meetings AS INTEGER)) as value,
+    d.customer_segment as segment
+FROM ${rsm_monthly_data} d
+JOIN ${monthly_trend} m ON d.month_date = m.month_date AND d.rsm_name = m.rsm_name
+WHERE d.rsm_name = '${inputs.selected_rsm.value}'
+GROUP BY m.month_label, m.month_date, d.customer_segment
+ORDER BY month_date, segment, metric
+```
+
+<ButtonGroup name="calls_meetings_segment" valueLabel="Customer Segment">
+  <ButtonGroupItem value="All Segments" isDefault valueLabel="All Segments" />
+  <ButtonGroupItem value="Existing (Pre-2025)" valueLabel="Existing (Pre-2025)" />
+  <ButtonGroupItem value="Repeat (2025)" valueLabel="Repeat (2025)" />
+  <ButtonGroupItem value="One-Timer (2025)" valueLabel="One-Time (2025)" />
+</ButtonGroup>
+
+```sql calls_meetings_trend
+SELECT 
+    month_label,
+    month_date,
+    metric,
+    value
+FROM ${calls_meetings_data}
+WHERE ('${inputs.calls_meetings_segment}' = 'All Segments' OR segment = '${inputs.calls_meetings_segment}')
+ORDER BY month_date, metric
+```
+
+```sql calls_meetings_pivot
+SELECT 
+    month_label,
+    month_date,
+    MAX(CASE WHEN metric = 'Calls' THEN value END) as calls,
+    MAX(CASE WHEN metric = 'Meetings' THEN value END) as meetings
+FROM ${calls_meetings_trend}
+GROUP BY month_label, month_date
+ORDER BY month_date
+```
+
+<DataTable 
+  data={calls_meetings_pivot} 
+  title={`Monthly Calls and Meetings${inputs.calls_meetings_segment !== 'All Segments' ? ' - ' + inputs.calls_meetings_segment : ''}`}
+>
+  <Column id=month_label />
+  <Column id=calls format=",.0f" 
+    contentType=colorscale 
+    colorScale={['#ce5050','white','#6db678']} 
+    colorScaleMin=0 />
+  <Column id=meetings format=",.0f" 
+    contentType=colorscale 
+    colorScale={['#ce5050','white','#6db678']} 
+    colorScaleMin=0 />
+</DataTable>
+
 
 ```sql leads_engagement_data
 SELECT * FROM leads_engagement
@@ -543,15 +878,33 @@ FROM ${monthly_lead_data}
 ORDER BY month_date
 ```
 
-<LineChart
-  data={orders_customers_trend}
-  x="month_label"
-  y="value"
-  series="metric"
-  yAxisTitle="Count"
-  title="Monthly Orders, Customers, and Leads"
-  xSort="month_date"
-/>
+```sql monthly_metrics_pivot
+SELECT 
+    month_label,
+    month_date,
+    MAX(CASE WHEN metric = 'Orders' THEN value END) as orders,
+    MAX(CASE WHEN metric = 'Customers' THEN value END) as customers,
+    MAX(CASE WHEN metric = 'Leads' THEN value END) as leads
+FROM ${orders_customers_trend}
+GROUP BY month_label, month_date
+ORDER BY month_date
+```
+
+<DataTable data={monthly_metrics_pivot} title="Monthly Metrics Summary">
+  <Column id=month_label />
+  <Column id=orders format=",.0f" 
+    contentType=colorscale 
+    colorScale={['#ce5050','white','#6db678']} 
+    colorScaleMin=0 />
+  <Column id=customers format=",.0f" 
+    contentType=colorscale 
+    colorScale={['#ce5050','white','#6db678']} 
+    colorScaleMin=0 />
+  <Column id=leads format=",.0f" 
+    contentType=colorscale 
+    colorScale={['#ce5050','white','#6db678']} 
+    colorScaleMin=0 />
+</DataTable>
 
 ```sql lead_calls_meetings_trend
 SELECT 
@@ -570,15 +923,28 @@ FROM ${monthly_lead_data}
 ORDER BY month_date
 ```
 
-<LineChart
-  data={lead_calls_meetings_trend}
-  x="month_label"
-  y="value"
-  series="metric"
-  yAxisTitle="Count"
-  title="Monthly Lead Calls & Meetings"
-  xSort="month_date"
-/>
+```sql lead_engagement_pivot
+SELECT 
+    month_label,
+    month_date,
+    MAX(CASE WHEN metric = 'Lead Calls' THEN value END) as lead_calls,
+    MAX(CASE WHEN metric = 'Lead Meetings' THEN value END) as lead_meetings
+FROM ${lead_calls_meetings_trend}
+GROUP BY month_label, month_date
+ORDER BY month_date
+```
+
+<DataTable data={lead_engagement_pivot} title="Monthly Lead Engagement">
+  <Column id=month_label />
+  <Column id=lead_calls format=",.0f" 
+    contentType=colorscale 
+    colorScale={['#ce5050','white','#6db678']} 
+    colorScaleMin=0 />
+  <Column id=lead_meetings format=",.0f" 
+    contentType=colorscale 
+    colorScale={['#ce5050','white','#6db678']} 
+    colorScaleMin=0 />
+</DataTable>
 
 ```sql monthly_engagement_comparison
 WITH lead_monthly AS (
@@ -660,64 +1026,104 @@ ORDER BY month_date
   xSort="month_date"
 /> -->
 
-```sql calls_meetings_trend
+
+## Engagement Impact Analysis
+
+```sql engagement_revenue_correlation
 SELECT 
     month_label,
     month_date,
-    'Calls' as metric,
-    monthly_calls as value
-FROM ${monthly_trend}
-UNION ALL
-SELECT 
-    month_label,
-    month_date,
-    'Meetings' as metric,
-    monthly_meetings as value
-FROM ${monthly_trend}
-ORDER BY month_date
-```
-
-<LineChart
-  data={calls_meetings_trend}
-  x="month_label"
-  y="value"
-  series="metric"
-  yAxisTitle="Count"
-  title="Monthly Calls and Meetings"
-  xSort="month_date"
-/>
-
-<ButtonGroup name="support_filter">
-  <ButtonGroupItem value="With Support" valueLabel="With Support" />
-  <ButtonGroupItem value="No Support" valueLabel="No Support" />
-</ButtonGroup>
-
-```sql monthly_segment_trend
-SELECT 
-    year,
-    month_label,
-    month_date,
-    rsm_name,
     customer_segment,
     support_status,
-    SUM(CAST(revenue AS DOUBLE)) as segment_revenue
+    SUM(CAST(revenue AS DOUBLE)) as segment_revenue,
+    SUM(CAST(total_calls AS INTEGER)) as calls,
+    SUM(CAST(total_meetings AS INTEGER)) as meetings,
+    SUM(CAST(total_calls AS INTEGER) + CAST(total_meetings AS INTEGER)) as total_touchpoints,
+    SUM(CAST(active_customers_this_month AS INTEGER)) as customers,
+    ROUND(SUM(CAST(total_calls AS INTEGER) + CAST(total_meetings AS INTEGER)) / 
+          NULLIF(SUM(CAST(active_customers_this_month AS INTEGER)), 0), 1) as touchpoints_per_customer,
+    ROUND(SUM(CAST(revenue AS DOUBLE)) / 
+          NULLIF(SUM(CAST(active_customers_this_month AS INTEGER)), 0), 0) as revenue_per_customer
 FROM ${rsm_monthly_data}
 WHERE rsm_name = '${inputs.selected_rsm.value}'
-    AND (support_status = '${inputs.support_filter}' OR '${inputs.support_filter}' = 'All')
-GROUP BY year, month_label, month_date, rsm_name, customer_segment, support_status
+GROUP BY month_label, month_date, customer_segment, support_status
 ORDER BY month_date
 ```
 
-<LineChart
-  data={monthly_segment_trend}
-  x="month_label"
-  y="segment_revenue"
+```sql correlation_stats
+WITH segment_correlation AS (
+    SELECT 
+        customer_segment,
+        support_status,
+        CORR(touchpoints_per_customer, revenue_per_customer) as correlation,
+        AVG(touchpoints_per_customer) as avg_touchpoints,
+        AVG(revenue_per_customer) as avg_revenue,
+        COUNT(*) as data_points
+    FROM ${engagement_revenue_correlation}
+    WHERE customers > 0
+    GROUP BY customer_segment, support_status
+)
+SELECT 
+    customer_segment,
+    support_status,
+    ROUND(correlation * 100, 1) as correlation_percent,
+    CASE 
+        WHEN correlation >= 0.7 THEN 'Strong Positive'
+        WHEN correlation >= 0.5 THEN 'Moderate Positive'
+        WHEN correlation >= 0.3 THEN 'Weak Positive'
+        WHEN correlation >= -0.3 THEN 'No Clear Correlation'
+        WHEN correlation >= -0.5 THEN 'Weak Negative'
+        WHEN correlation >= -0.7 THEN 'Moderate Negative'
+        ELSE 'Strong Negative'
+    END as correlation_strength,
+    ROUND(avg_touchpoints, 1) as avg_touchpoints,
+    ROUND(avg_revenue, 0) as avg_revenue,
+    data_points
+FROM segment_correlation
+ORDER BY correlation DESC
+```
+
+<DataTable 
+  data={correlation_stats}
+  title="Correlation Between Calls/Meetings and Revenue"
+>
+  <Column id=customer_segment name="Customer Segment" />
+  <Column id=support_status name="Support Status" />
+  <Column id=correlation_percent format=".1f%" 
+    contentType=colorscale 
+    colorScale={['#ce5050','white','#6db678']} 
+    colorScaleMin={-1} 
+    colorScaleMax={1}
+    name="Correlation %" />
+  <Column id=correlation_strength name="Correlation Strength" />
+  <Column id=avg_touchpoints name="Avg Touchpoints/Customer" />
+  <Column id=avg_revenue format="$,.0f" name="Avg Revenue/Customer" />
+  <Column id=data_points name="Data Points" />
+</DataTable>
+
+```sql scatter_data
+SELECT 
+    customer_segment,
+    support_status,
+    touchpoints_per_customer,
+    revenue_per_customer,
+    customers
+FROM ${engagement_revenue_correlation}
+WHERE customers > 0
+```
+
+<ScatterPlot
+  data={scatter_data}
+  x="touchpoints_per_customer"
+  y="revenue_per_customer"
   series="customer_segment"
-  yAxisTitle="Revenue"
-  title="Monthly Revenue by Customer Segment (${inputs.support_filter === 'All' ? 'All Support Status' : inputs.support_filter})"
+  size="customers"
+  xAxisTitle="Touchpoints per Customer"
+  yAxisTitle="Revenue per Customer"
+  title="Impact of Calls/Meetings on Revenue"
   formatY="$,.0f"
-  xSort="month_date"
 />
+
 
 </Tab>
 
@@ -873,6 +1279,8 @@ ORDER BY value DESC
 LIMIT 1
 ```
 
+### Credential
+
 <BigValue
   data={top_credential}
   value=name
@@ -893,6 +1301,8 @@ LIMIT 1
   format=".1f%"
 />
 
+### State
+
 <BigValue
   data={top_state}
   value=name
@@ -912,6 +1322,8 @@ LIMIT 1
   title="% of Total Revenue"
   format=".1f%"
 />
+
+### Source
 
 <BigValue
   data={top_source}

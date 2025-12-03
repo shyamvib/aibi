@@ -2,15 +2,7 @@
 title: RSM Performance Dashboard
 ---
 
-<!-- <div style="margin-bottom: 20px;">
-  <a href="/" style="margin-right: 15px;">Home</a> | 
-  <a href="/rsm_dashboard" style="margin-right: 15px; font-weight: bold;">Dashboard</a> | 
-  <a href="/rsm_detail" style="margin-right: 15px;">RSM Detail</a> | 
-  <a href="/rsm_simple" style="margin-right: 15px;">Simple View</a>
-</div> -->
-
 ## 2025 Revenue by Segment & Support Status
-
 
 ```sql rsm_data
 SELECT * FROM rsm_performance_data
@@ -291,58 +283,6 @@ FROM ${revenue_by_support}
 
 ---
 
-## RSM Performance Analysis
-
-```sql rsm_summary_by_support
-SELECT 
-    rsm_name,
-    support_status,
-    SUM(CASE WHEN customer_segment IN ('Repeat (2025)', 'One-Timer (2025)') THEN CAST(revenue AS DOUBLE) ELSE 0 END) as revenue,
-    SUM(CASE WHEN customer_segment IN ('Repeat (2025)', 'One-Timer (2025)') THEN CAST(customers AS INTEGER) ELSE 0 END) as customers
-FROM ${rsm_data}
-WHERE customer_segment IN ('Repeat (2025)', 'One-Timer (2025)')
-GROUP BY rsm_name, support_status
-ORDER BY rsm_name, support_status
-```
-
-```sql rsm_summary
-SELECT 
-    rsm_name,
-    SUM(CASE WHEN customer_segment IN ('Repeat (2025)', 'One-Timer (2025)') THEN CAST(revenue AS DOUBLE) ELSE 0 END) as total_revenue,
-    SUM(CASE WHEN customer_segment IN ('Repeat (2025)', 'One-Timer (2025)') THEN CAST(customers AS INTEGER) ELSE 0 END) as total_customers
-FROM ${rsm_data}
-GROUP BY rsm_name
-ORDER BY total_revenue DESC
-```
-
-<BarChart
-  data={rsm_summary_by_support}
-  x=rsm_name
-  y=revenue
-  series=support_status
-  yAxisTitle="Revenue ($M)"
-  title="New Customer Revenue by RSM and Support Status (2025)"
-  xAxisTitle="RSM"
-  formatY="$,.1f"
-  xAxisLabelRotate=90
-/>
-
-<BarChart
-  data={rsm_summary_by_support}
-  x=rsm_name
-  y=customers
-  series=support_status
-  yAxisTitle="Customer Count"
-  title="New Customers by RSM and Support Status (2025)"
-  xAxisTitle="RSM"
-  formatY=","
-  xAxisLabelRotate=90
-/>
-
-For detailed analysis of individual RSMs, please visit the [RSM Detail View](/rsm_detail) page.
-
----
-
 ## Monthly Performance Overview
 
 ```sql rsm_monthly_data
@@ -584,7 +524,8 @@ WITH jan_active AS (
         '2025-01-01' as month_date,
         'Jan' as month_name,
         1 as month_num,
-        SUM(CAST(active_through_jan AS INTEGER)) - SUM(CAST(active_through_feb AS INTEGER)) as active_customers
+        SUM(CAST(active_through_jan AS INTEGER)) - SUM(CAST(active_through_feb AS INTEGER)) as active_customers,
+        SUM(CAST(active_through_jan AS INTEGER)) - SUM(CAST(active_through_feb AS INTEGER)) as value_for_color
     FROM ${customer_retention_long}
 ),
 feb_active AS (
@@ -592,7 +533,8 @@ feb_active AS (
         '2025-02-01' as month_date,
         'Feb' as month_name,
         2 as month_num,
-        SUM(CAST(active_through_feb AS INTEGER)) - SUM(CAST(active_through_mar AS INTEGER)) as active_customers
+        SUM(CAST(active_through_feb AS INTEGER)) - SUM(CAST(active_through_mar AS INTEGER)) as active_customers,
+        SUM(CAST(active_through_feb AS INTEGER)) - SUM(CAST(active_through_mar AS INTEGER)) as value_for_color
     FROM ${customer_retention_long}
 ),
 mar_active AS (
@@ -600,7 +542,8 @@ mar_active AS (
         '2025-03-01' as month_date,
         'Mar' as month_name,
         3 as month_num,
-        SUM(CAST(active_through_mar AS INTEGER)) - SUM(CAST(active_through_apr AS INTEGER)) as active_customers
+        SUM(CAST(active_through_mar AS INTEGER)) - SUM(CAST(active_through_apr AS INTEGER)) as active_customers,
+        SUM(CAST(active_through_mar AS INTEGER)) - SUM(CAST(active_through_apr AS INTEGER)) as value_for_color
     FROM ${customer_retention_long}
 ),
 apr_active AS (
@@ -608,7 +551,8 @@ apr_active AS (
         '2025-04-01' as month_date,
         'Apr' as month_name,
         4 as month_num,
-        SUM(CAST(active_through_apr AS INTEGER)) - SUM(CAST(active_through_may AS INTEGER)) as active_customers
+        SUM(CAST(active_through_apr AS INTEGER)) - SUM(CAST(active_through_may AS INTEGER)) as active_customers,
+        SUM(CAST(active_through_apr AS INTEGER)) - SUM(CAST(active_through_may AS INTEGER)) as value_for_color
     FROM ${customer_retention_long}
 ),
 may_active AS (
@@ -616,7 +560,8 @@ may_active AS (
         '2025-05-01' as month_date,
         'May' as month_name,
         5 as month_num,
-        SUM(CAST(active_through_may AS INTEGER)) - SUM(CAST(active_through_jun AS INTEGER)) as active_customers
+        SUM(CAST(active_through_may AS INTEGER)) - SUM(CAST(active_through_jun AS INTEGER)) as active_customers,
+        SUM(CAST(active_through_may AS INTEGER)) - SUM(CAST(active_through_jun AS INTEGER)) as value_for_color
     FROM ${customer_retention_long}
 ),
 jun_active AS (
@@ -624,7 +569,8 @@ jun_active AS (
         '2025-06-01' as month_date,
         'Jun' as month_name,
         6 as month_num,
-        SUM(CAST(active_through_jun AS INTEGER)) - SUM(CAST(active_through_jul AS INTEGER)) as active_customers
+        SUM(CAST(active_through_jun AS INTEGER)) - SUM(CAST(active_through_jul AS INTEGER)) as active_customers,
+        SUM(CAST(active_through_jun AS INTEGER)) - SUM(CAST(active_through_jul AS INTEGER)) as value_for_color
     FROM ${customer_retention_long}
 ),
 jul_active AS (
@@ -632,7 +578,8 @@ jul_active AS (
         '2025-07-01' as month_date,
         'Jul' as month_name,
         7 as month_num,
-        SUM(CAST(active_through_jul AS INTEGER)) - SUM(CAST(active_through_aug AS INTEGER)) as active_customers
+        SUM(CAST(active_through_jul AS INTEGER)) - SUM(CAST(active_through_aug AS INTEGER)) as active_customers,
+        SUM(CAST(active_through_jul AS INTEGER)) - SUM(CAST(active_through_aug AS INTEGER)) as value_for_color
     FROM ${customer_retention_long}
 ),
 aug_active AS (
@@ -640,7 +587,8 @@ aug_active AS (
         '2025-08-01' as month_date,
         'Aug' as month_name,
         8 as month_num,
-        SUM(CAST(active_through_aug AS INTEGER)) - SUM(CAST(active_through_sep AS INTEGER)) as active_customers
+        SUM(CAST(active_through_aug AS INTEGER)) - SUM(CAST(active_through_sep AS INTEGER)) as active_customers,
+        SUM(CAST(active_through_aug AS INTEGER)) - SUM(CAST(active_through_sep AS INTEGER)) as value_for_color
     FROM ${customer_retention_long}
 ),
 sep_active AS (
@@ -648,7 +596,8 @@ sep_active AS (
         '2025-09-01' as month_date,
         'Sep' as month_name,
         9 as month_num,
-        SUM(CAST(active_through_sep AS INTEGER)) - SUM(CAST(active_through_oct AS INTEGER)) as active_customers
+        SUM(CAST(active_through_sep AS INTEGER)) - SUM(CAST(active_through_oct AS INTEGER)) as active_customers,
+        SUM(CAST(active_through_sep AS INTEGER)) - SUM(CAST(active_through_oct AS INTEGER)) as value_for_color
     FROM ${customer_retention_long}
 ),
 oct_active AS (
@@ -656,7 +605,8 @@ oct_active AS (
         '2025-10-01' as month_date,
         'Oct' as month_name,
         10 as month_num,
-        SUM(CAST(active_through_oct AS INTEGER)) - SUM(CAST(active_through_nov AS INTEGER)) as active_customers
+        SUM(CAST(active_through_oct AS INTEGER)) - SUM(CAST(active_through_nov AS INTEGER)) as active_customers,
+        SUM(CAST(active_through_oct AS INTEGER)) - SUM(CAST(active_through_nov AS INTEGER)) as value_for_color
     FROM ${customer_retention_long}
 ),
 nov_active AS (
@@ -664,7 +614,8 @@ nov_active AS (
         '2025-11-01' as month_date,
         'Nov' as month_name,
         11 as month_num,
-        SUM(CAST(active_through_nov AS INTEGER)) - SUM(CAST(active_through_dec AS INTEGER)) as active_customers
+        SUM(CAST(active_through_nov AS INTEGER)) - SUM(CAST(active_through_dec AS INTEGER)) as active_customers,
+        SUM(CAST(active_through_nov AS INTEGER)) - SUM(CAST(active_through_dec AS INTEGER)) as value_for_color
     FROM ${customer_retention_long}
 ),
 dec_active AS (
@@ -672,7 +623,8 @@ dec_active AS (
         '2025-12-01' as month_date,
         'Dec' as month_name,
         12 as month_num,
-        SUM(CAST(active_through_dec AS INTEGER)) as active_customers
+        SUM(CAST(active_through_dec AS INTEGER)) as active_customers,
+        SUM(CAST(active_through_dec AS INTEGER)) as value_for_color
     FROM ${customer_retention_long}
 ),
 all_months AS (
@@ -693,12 +645,19 @@ SELECT
     month_name as month,
     month_date,
     month_num,
-    active_customers
+    active_customers,
+    value_for_color,
+    ROUND(
+        CASE 
+            WHEN LAG(active_customers) OVER (ORDER BY month_num) = 0 THEN NULL
+            ELSE (active_customers - LAG(active_customers) OVER (ORDER BY month_num)) * 100.0 / LAG(active_customers) OVER (ORDER BY month_num)
+        END, 1
+    ) as mom_pct_change
 FROM all_months
-ORDER BY month_date
+ORDER BY month_num 
 ```
 
-<LineChart
+<!-- <LineChart
   data={cumulative_new_customers}
   x="month"
   y="total_new_customers"
@@ -706,7 +665,7 @@ ORDER BY month_date
   title="Cumulative New Customer Acquisitions (2025)"
   formatY=","
   xSort="month_num"
-/>
+/> -->
 
 <!-- <LineChart
   data={new_customers_monthly}
@@ -718,15 +677,26 @@ ORDER BY month_date
   xSort="month_date"
 /> -->
 
-<LineChart
+### Monthly Active Customers (2025)
+<DataTable 
   data={monthly_active_customers}
-  x="month"
-  y="active_customers"
-  yAxisTitle="Active Customers"
-  title="Monthly Active Customers (2025)"
-  formatY=","
-  xSort="month_num"
-/>
+  search={false}
+  rows=12
+  rowNavigation={false}
+>
+  <Column id=month name="Month" />
+  <Column id=active_customers name="Active Customers" 
+    format=","
+    contentType=colorscale 
+    colorScale={['#ce5050','white','#6db678']} 
+    colorScaleMin=0 />
+  <Column id=mom_pct_change name="MoM % Change" 
+    format="+.1f%"
+    contentType=colorscale 
+    colorScale={['#ce5050','white','#6db678']} 
+    colorScaleMin={-100}
+    colorScaleMax={100} />
+</DataTable>
 
 ```sql customer_retention_by_cohort
 SELECT
@@ -876,49 +846,113 @@ ORDER BY month_label
 />
 
 
-```sql new_customers_by_segment
-SELECT
+```sql monthly_new_customers
+WITH base_data AS (
+    SELECT
+        month_label,
+        month_date,
+        customer_segment,
+        support_status,
+        SUM(CAST(new_customers AS INTEGER)) as new_customers
+    FROM ${first_orders_data}
+    GROUP BY month_label, month_date, customer_segment, support_status
+)
+SELECT 
     month_label,
     month_date,
     customer_segment,
-    SUM(CAST(new_customers AS INTEGER)) as new_customers
-FROM ${first_orders_data}
-GROUP BY month_label, month_date, customer_segment
-ORDER BY month_date
-```
-
-<LineChart
-  data={new_customers_by_segment}
-  x="month_label"
-  y="new_customers"
-  series="customer_segment"
-  yAxisTitle="New Customers"
-  title="Monthly New Customers by Segment"
-  formatY=","
-  xSort="month_date"
-/>
-
-```sql new_customers_by_support
-SELECT
-    month_label,
-    month_date,
     support_status,
-    SUM(CAST(new_customers AS INTEGER)) as new_customers
-FROM ${first_orders_data}
-GROUP BY month_label, month_date, support_status
-ORDER BY month_date
+    new_customers,
+    new_customers as value_for_color
+FROM base_data
+WHERE (customer_segment = '${inputs.monthly_segment_filter}' OR '${inputs.monthly_segment_filter}' = 'All')
+  AND (support_status = '${inputs.monthly_support_filter}' OR '${inputs.monthly_support_filter}' = 'All')
+ORDER BY month_date, customer_segment, support_status
 ```
 
-<LineChart
-  data={new_customers_by_support}
-  x="month_label"
-  y="new_customers"
-  series="support_status"
-  yAxisTitle="New Customers"
-  title="Monthly New Customers by Support Status"
-  formatY=","
-  xSort="month_date"
+### Monthly New Customers
+
+<ButtonGroup name="monthly_segment_filter" valueLabel="Customer Segment">
+  <ButtonGroupItem value="All" isDefault valueLabel="All">All Segments</ButtonGroupItem>
+  <ButtonGroupItem value="Repeat (2025)" valueLabel="Repeat">Repeat (2025)</ButtonGroupItem>
+  <ButtonGroupItem value="One-Timer (2025)" valueLabel="One-Timer">One-Timer (2025)</ButtonGroupItem>
+  <ButtonGroupItem value="Existing (Pre-2025)" valueLabel="Existing">Existing (Pre-2025)</ButtonGroupItem>
+</ButtonGroup>
+
+<ButtonGroup name="monthly_support_filter" valueLabel="Support Status">
+  <ButtonGroupItem value="All" isDefault valueLabel="All">All Support Status</ButtonGroupItem>
+  <ButtonGroupItem value="No Support" valueLabel="No Support">No Support</ButtonGroupItem>
+  <ButtonGroupItem value="With Support" valueLabel="With Support">With Support</ButtonGroupItem>
+</ButtonGroup>
+
+<DataTable 
+  data={monthly_new_customers}
+  search={false}
+  rowNavigation={false}
+>
+  <Column id=month_label name="Month" />
+  <Column id=customer_segment name="Customer Segment" />
+  <Column id=support_status name="Support Status" />
+  <Column id=new_customers name="New Customers" 
+    format=","
+    contentType=colorscale 
+    colorScale={['#ce5050','white','#6db678']} 
+    colorScaleMin=0 />
+</DataTable>
+
+
+## RSM Performance Analysis
+
+```sql rsm_summary_by_support
+SELECT 
+    rsm_name,
+    support_status,
+    SUM(CASE WHEN customer_segment IN ('Repeat (2025)', 'One-Timer (2025)') THEN CAST(revenue AS DOUBLE) ELSE 0 END) as revenue,
+    SUM(CASE WHEN customer_segment IN ('Repeat (2025)', 'One-Timer (2025)') THEN CAST(customers AS INTEGER) ELSE 0 END) as customers
+FROM ${rsm_data}
+WHERE customer_segment IN ('Repeat (2025)', 'One-Timer (2025)')
+GROUP BY rsm_name, support_status
+ORDER BY rsm_name, support_status
+```
+
+```sql rsm_summary
+SELECT 
+    rsm_name,
+    SUM(CASE WHEN customer_segment IN ('Repeat (2025)', 'One-Timer (2025)') THEN CAST(revenue AS DOUBLE) ELSE 0 END) as total_revenue,
+    SUM(CASE WHEN customer_segment IN ('Repeat (2025)', 'One-Timer (2025)') THEN CAST(customers AS INTEGER) ELSE 0 END) as total_customers
+FROM ${rsm_data}
+GROUP BY rsm_name
+ORDER BY total_revenue DESC
+```
+
+<BarChart
+  data={rsm_summary_by_support}
+  x=rsm_name
+  y=revenue
+  series=support_status
+  yAxisTitle="Revenue ($M)"
+  title="New Customer Revenue by RSM and Support Status (2025)"
+  xAxisTitle="RSM"
+  formatY="$,.1f"
+  xAxisLabelRotate=90
 />
+
+<BarChart
+  data={rsm_summary_by_support}
+  x=rsm_name
+  y=customers
+  series=support_status
+  yAxisTitle="Customer Count"
+  title="New Customers by RSM and Support Status (2025)"
+  xAxisTitle="RSM"
+  formatY=","
+  xAxisLabelRotate=90
+/>
+
+For detailed analysis of individual RSMs, please visit the [RSM Detail View](/rsm_detail) page.
+
+---
+
 
 ## Retention Rate Analysis
 
@@ -1128,18 +1162,35 @@ GROUP BY rsm_name
 ORDER BY total_leads DESC
 ```
 
-### Top RSMs by Lead Engagement (Top 10)
+### Lead Engagement by RSM
 
-<DataTable
-  data={lead_engagement_by_rsm.slice(0, 10)}
-  columns={[
-    {id: "rsm_name", header: "RSM"},
-    {id: "total_leads", header: "Total Leads", format: ","},
-    {id: "total_calls", header: "Calls", format: ","},
-    {id: "total_meetings", header: "Meetings", format: ","},
-    {id: "touchpoints_per_lead", header: "Touchpoints per Lead", format: ".1f"}
-  ]}
-/>
+<DataTable 
+  data={lead_engagement_by_rsm}
+  search={false}
+  rowNavigation={false}
+>
+  <Column id=rsm_name name="RSM" />
+  <Column id=total_leads name="Total Leads" 
+    format=","
+    contentType=colorscale 
+    colorScale={['#ce5050','white','#6db678']} 
+    colorScaleMin=0 />
+  <Column id=total_calls name="Calls" 
+    format=","
+    contentType=colorscale 
+    colorScale={['#ce5050','white','#6db678']} 
+    colorScaleMin=0 />
+  <Column id=total_meetings name="Meetings" 
+    format=","
+    contentType=colorscale 
+    colorScale={['#ce5050','white','#6db678']} 
+    colorScaleMin=0 />
+  <Column id=touchpoints_per_lead name="Touchpoints per Lead" 
+    format=".1f"
+    contentType=colorscale 
+    colorScale={['#ce5050','white','#6db678']} 
+    colorScaleMin=0 />
+</DataTable>
 
 ```sql lead_conversion_by_rsm
 WITH lead_data AS (
@@ -1158,32 +1209,71 @@ WITH lead_data AS (
 customer_data AS (
     SELECT 
         rsm_name,
-        SUM(CASE WHEN customer_segment IN ('Repeat (2025)', 'One-Timer (2025)') THEN CAST(customers AS INTEGER) ELSE 0 END) as new_customers_2025
+        customer_segment,
+        support_status,
+        SUM(CAST(customers AS INTEGER)) as customers
     FROM rsm_performance_data
+    WHERE customer_segment IN ('Repeat (2025)', 'One-Timer (2025)')
+    GROUP BY rsm_name, customer_segment, support_status
+),
+filtered_customers AS (
+    SELECT 
+        rsm_name,
+        SUM(customers) as filtered_customers
+    FROM customer_data
+    WHERE (customer_segment = '${inputs.conversion_segment_filter}' OR '${inputs.conversion_segment_filter}' = 'All')
+      AND (support_status = '${inputs.conversion_support_filter}' OR '${inputs.conversion_support_filter}' = 'All')
     GROUP BY rsm_name
 )
 SELECT
     ld.rsm_name,
     ld.total_leads,
-    cd.new_customers_2025,
-    ROUND(cd.new_customers_2025 / NULLIF(cd.new_customers_2025 + ld.total_leads, 0) * 100, 1) as conversion_rate
+    COALESCE(fc.filtered_customers, 0) as new_customers,
+    ROUND(COALESCE(fc.filtered_customers, 0) / NULLIF(COALESCE(fc.filtered_customers, 0) + ld.total_leads, 0) * 100, 1) as conversion_rate
 FROM lead_data ld
-LEFT JOIN customer_data cd ON ld.rsm_name = cd.rsm_name
+LEFT JOIN filtered_customers fc ON ld.rsm_name = fc.rsm_name
 WHERE ld.total_leads > 0
+  AND (fc.filtered_customers > 0 OR '${inputs.conversion_segment_filter}' = 'All' OR '${inputs.conversion_support_filter}' = 'All')
 ORDER BY conversion_rate DESC
 ```
 
-### Top RSMs by Lead Conversion Rate (Top 10)
+### Lead Conversion Rate by RSM
 
-<DataTable
-  data={lead_conversion_by_rsm.slice(0, 10)}
-  columns={[
-    {id: "rsm_name", header: "RSM"},
-    {id: "total_leads", header: "Total Leads", format: ","},
-    {id: "new_customers_2025", header: "New Customers", format: ","},
-    {id: "conversion_rate", header: "Conversion Rate", format: ".1f%"}
-  ]}
-/>
+<ButtonGroup name="conversion_segment_filter" valueLabel="Customer Segment">
+  <ButtonGroupItem value="All" isDefault valueLabel="All">All Segments</ButtonGroupItem>
+  <ButtonGroupItem value="Repeat (2025)" valueLabel="Repeat">Repeat (2025)</ButtonGroupItem>
+  <ButtonGroupItem value="One-Timer (2025)" valueLabel="One-Timer">One-Timer (2025)</ButtonGroupItem>
+</ButtonGroup>
+
+<ButtonGroup name="conversion_support_filter" valueLabel="Support Status">
+  <ButtonGroupItem value="All" isDefault valueLabel="All">All Support Status</ButtonGroupItem>
+  <ButtonGroupItem value="No Support" valueLabel="No Support">No Support</ButtonGroupItem>
+  <ButtonGroupItem value="With Support" valueLabel="With Support">With Support</ButtonGroupItem>
+</ButtonGroup>
+
+<DataTable 
+  data={lead_conversion_by_rsm}
+  search={false}
+  rowNavigation={false}
+>
+  <Column id=rsm_name name="RSM" />
+  <Column id=total_leads name="Total Leads" 
+    format=","
+    contentType=colorscale 
+    colorScale={['#ce5050','white','#6db678']} 
+    colorScaleMin=0 />
+  <Column id=new_customers name="New Customers" 
+    format=","
+    contentType=colorscale 
+    colorScale={['#ce5050','white','#6db678']} 
+    colorScaleMin=0 />
+  <Column id=conversion_rate name="Conversion Rate" 
+    format=".1f%"
+    contentType=colorscale 
+    colorScale={['#ce5050','white','#6db678']} 
+    colorScaleMin=0
+    colorScaleMax=100 />
+</DataTable>
 
 ```sql monthly_lead_trend
 SELECT 
@@ -1205,43 +1295,62 @@ ORDER BY month_date
 
 ### Monthly Lead Engagement Trend
 
-<LineChart
+#### Monthly Leads Engaged (No Orders)
+<DataTable 
   data={monthly_lead_trend}
-  x="month_label"
-  y="leads"
-  yAxisTitle="Leads"
-  title="Monthly Leads Engaged (No Orders)"
-  xSort="month_date"
-/>
+  search={false}
+  rowNavigation={false}
+>
+  <Column id=month_label name="Month" />
+  <Column id=leads name="Leads Engaged (No Orders)" 
+    format=","
+    contentType=colorscale 
+    colorScale={['#ce5050','white','#6db678']} 
+    colorScaleMin=0 />
+</DataTable>
 
 ```sql monthly_lead_activities
-SELECT 
-    month_label,
-    month_date,
-    'Calls' as activity_type,
-    calls as count
-FROM ${monthly_lead_trend}
+WITH calls_data AS (
+    SELECT 
+        month_label,
+        month_date,
+        'Calls' as activity_type,
+        calls as count,
+        calls as value_for_color
+    FROM ${monthly_lead_trend}
+),
+meetings_data AS (
+    SELECT 
+        month_label,
+        month_date,
+        'Meetings' as activity_type,
+        meetings as count,
+        meetings as value_for_color
+    FROM ${monthly_lead_trend}
+)
+SELECT * FROM calls_data
 UNION ALL
-SELECT 
-    month_label,
-    month_date,
-    'Meetings' as activity_type,
-    meetings as count
-FROM ${monthly_lead_trend}
-ORDER BY month_date
+SELECT * FROM meetings_data
+ORDER BY month_date, activity_type
 ```
 
 ### Monthly Lead Activities
 
-<LineChart
+#### Monthly Lead Calls & Meetings
+<DataTable 
   data={monthly_lead_activities}
-  x="month_label"
-  y="count"
-  series="activity_type"
-  yAxisTitle="Count"
-  title="Monthly Lead Calls & Meetings"
-  xSort="month_date"
-/>
+  search={false}
+  rowNavigation={false}
+  groupBy=month_label
+  groupByLabel=Month
+>
+  <Column id=activity_type name="Activity Type" />
+  <Column id=count name="Count" 
+    format=","
+    contentType=colorscale 
+    colorScale={['#ce5050','white','#6db678']} 
+    colorScaleMin=0 />
+</DataTable>
 
 ---
 
@@ -1259,13 +1368,12 @@ WHERE rsm_name IN (
 
 ```sql product_list
 SELECT DISTINCT
-    test_name as value,
-    test_name as label
+    test_name
 FROM ${product_data}
 ORDER BY test_name
 ```
 
-<Dropdown name=selected_product data={product_list} value=value>
+<Dropdown name=selected_product data={product_list} value=test_name title="Select a Product">
   <DropdownOption value="ALL" valueLabel="All Products"/>
 </Dropdown>
 

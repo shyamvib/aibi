@@ -24,6 +24,15 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Install Python dependencies
+        run: pip install pandas pyarrow
+        
+      - name: Convert Parquet to CSV
+        run: |
+          # Convert parquet files to CSV format
+          python convert_parquet_to_csv.py --directory ./sources/parquet_files --output ./sources/csv
+          echo "CSV files are available in: ./sources/csv"
+          
       - name: Build
         env:
           BASE_PATH: '/aibi'

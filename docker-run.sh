@@ -11,6 +11,7 @@ show_help() {
   echo "  dev       Run in development mode (default)"
   echo "  build     Build the Docker image"
   echo "  sources   Generate source files from ClickHouse"
+  echo "  csv       Convert parquet files to CSV format"
   echo "  stop      Stop the running containers"
   echo "  clean     Remove containers and volumes"
   echo "  help      Display this help message"
@@ -37,6 +38,14 @@ case "$1" in
   sources)
     echo "Generating source files from ClickHouse..."
     docker compose run --rm evidence-dashboard npm run sources:all
+    ;;
+  csv)
+    echo "Converting parquet files to CSV format..."
+    docker run --rm -v "$(pwd):/app" -w /app python:3.9 bash -c "
+      pip install pandas pyarrow &&
+      python /app/convert_parquet_to_csv.py --directory /app/sources/parquet_files --output /app/sources/csv
+    "
+    echo "CSV files are available in: ./sources/csv"
     ;;
   stop)
     echo "Stopping containers..."

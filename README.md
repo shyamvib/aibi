@@ -8,8 +8,8 @@ This project demonstrates how to connect to a ClickHouse database, query data, a
 
 This project uses a two-tier architecture:
 
-1. **Data Tier**: ClickHouse database connection that generates parquet files
-2. **Visualization Tier**: Evidence dashboard that reads from parquet files
+1. **Data Tier**: ClickHouse database connection that generates parquet files or CSV files
+2. **Visualization Tier**: Evidence dashboard that reads from parquet files or CSV files
 
 This approach provides several benefits:
 - Reduced load on the ClickHouse server
@@ -51,7 +51,18 @@ This command:
 - Generates parquet files in the `/sources/parquet_files` directory
 - Flattens the directory structure for easier access
 
-### 4. Start the Dashboard
+### 4. Convert Parquet Files to CSV (Optional)
+
+```bash
+./docker-run.sh csv
+```
+
+This command:
+- Converts all parquet files to CSV format
+- Stores CSV files in the `/sources/csv` directory
+- Makes CSV files available as a data source in your dashboard
+
+### 5. Start the Dashboard
 
 ```bash
 npm run dev
