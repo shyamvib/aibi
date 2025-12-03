@@ -1,0 +1,2 @@
+# Handle parquet files properly
+*.parquet binary
