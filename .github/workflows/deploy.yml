@@ -9,6 +9,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Increase timeout to 30 minutes (default is 6 hours, but being explicit)
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4

@@ -6,14 +6,43 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "3001:3001"
     volumes:
       - ./sources:/app/sources
       - ./.evidence:/app/.evidence
       - ./pages:/app/pages
+      - ./vite.config.js:/app/vite.config.js
     environment:
       - NODE_ENV=development
       - HOST=0.0.0.0
-      - ORIGIN=http://localhost:3000
-    command: npm run dev -- --host 0.0.0.0
-    network_mode: "host"
+      - ORIGIN=http://localhost:3001
+      - VITE_ALLOW_ALL_HOSTS=true
+    command: npm run dev -- --host 0.0.0.0 --port 3001
+    # Using bridge network instead of host for ngrok compatibility
+    # network_mode: "host"
+    networks:
+      - evidence-network
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+        
+  ngrok:
+    image: ngrok/ngrok:latest
+    restart: unless-stopped
+    ports:
+      - "4040:4040"
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
+    command:
+      - "http"
+      - "--basic-auth=rsm:vibrantbi"
+      - "evidence-dashboard:3001"
+    networks:
+      - evidence-network
+    depends_on:
+      - evidence-dashboard
+
+networks:
+  evidence-network:
+    driver: bridge

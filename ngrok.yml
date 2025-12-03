@@ -1,0 +1,10 @@
+version: "2"
+authtoken: ${NGROK_AUTHTOKEN}
+web_addr: 0.0.0.0:4040
+log: stdout
+tunnels:
+  evidence:
+    proto: http
+    addr: evidence-dashboard:3001
+    basic_auth:
+      - "rsm:vibrantbi"

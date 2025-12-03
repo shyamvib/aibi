@@ -5,6 +5,10 @@ appearance:
 deployment:
   basePath: /aibi
 
+duckdb:
+  timeout: 120000  # 120 seconds timeout
+  memory_limit: "4GB"
+
 theme:
   colorPalettes:
     default:
