@@ -37,6 +37,7 @@ all_2025_customers AS (
     AND hubspot_id IS NOT NULL
     AND sales_name IS NOT NULL
     AND sales_name != ''
+    AND sales_name NOT IN ('Suzi Hansen', 'Malek Bishawi', 'Kristina Banister')
 )
 SELECT 
     ac.rsm_name,

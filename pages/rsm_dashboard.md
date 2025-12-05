@@ -5,13 +5,9 @@ title: RSM Performance Dashboard
 ## 2025 Revenue by Segment & Support Status
 
 ```sql rsm_data
-SELECT * FROM rsm_performance_data
-WHERE rsm_name IN (
-  'Daniel McElwain', 'Paige Chapman', 'William Maycock', 'Scott Sclar', 'Samantha Pender',
-  'Michael Watkins', 'Sara Simiele', 'Elizabeth Munoz-Lebaron', 'Breanne Murcek', 'Sydney Blissick',
-  'Brandon Tschetter', 'David L. Brown', 'Javier Alvarez', 'Christopher Dennison', 'Andrea Whitmarsh',
-  'Kevin Sullivan', 'Mateo Freeman', 'Matthew Holtshouser', 'Madelyn Wiggins'
-)
+SELECT * FROM rsm_performance_data  
+WHERE rsm_name IS NOT NULL
+AND rsm_name NOT IN ('Suzi Hansen', 'Malek Bishawi', 'Kristina Banister')
 ```
 
 ```sql total_metrics
@@ -51,12 +47,8 @@ WITH lead_data AS (
         SUM(CAST(calls AS INTEGER)) as total_calls,
         SUM(CAST(meetings AS INTEGER)) as total_meetings
     FROM leads_engagement
-    WHERE rsm_name IN (
-      'Daniel McElwain', 'Paige Chapman', 'William Maycock', 'Scott Sclar', 'Samantha Pender',
-      'Michael Watkins', 'Sara Simiele', 'Elizabeth Munoz-Lebaron', 'Breanne Murcek', 'Sydney Blissick',
-      'Brandon Tschetter', 'David L. Brown', 'Javier Alvarez', 'Christopher Dennison', 'Andrea Whitmarsh',
-      'Kevin Sullivan', 'Mateo Freeman', 'Matthew Holtshouser', 'Madelyn Wiggins'
-    )
+    WHERE rsm_name IS NOT NULL
+    AND rsm_name NOT IN ('Suzi Hansen', 'Malek Bishawi', 'Kristina Banister')
     GROUP BY rsm_name
 ),
 customer_data AS (
@@ -1198,12 +1190,8 @@ WITH lead_data AS (
         rsm_name,
         SUM(CAST(new_leads_engaged_no_order AS INTEGER)) as total_leads
     FROM leads_engagement
-    WHERE rsm_name IN (
-      'Daniel McElwain', 'Paige Chapman', 'William Maycock', 'Scott Sclar', 'Samantha Pender',
-      'Michael Watkins', 'Sara Simiele', 'Elizabeth Munoz-Lebaron', 'Breanne Murcek', 'Sydney Blissick',
-      'Brandon Tschetter', 'David L. Brown', 'Javier Alvarez', 'Christopher Dennison', 'Andrea Whitmarsh',
-      'Kevin Sullivan', 'Mateo Freeman', 'Matthew Holtshouser', 'Madelyn Wiggins'
-    )
+    WHERE rsm_name IS NOT NULL
+    AND rsm_name NOT IN ('Suzi Hansen', 'Malek Bishawi', 'Kristina Banister')
     GROUP BY rsm_name
 ),
 customer_data AS (
