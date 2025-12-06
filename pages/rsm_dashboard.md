@@ -2,12 +2,219 @@
 title: RSM Performance Dashboard
 ---
 
-## 2025 Revenue by Segment & Support Status
+## Customer Segments Growth Analysis
+
+```sql customer_segments_growth
+SELECT * FROM customer_segments_growth
+```
+
+```sql customer_segments_latest
+SELECT * FROM customer_segments_latest
+```
+
+### Active Customers
+<BigValue 
+  data={customer_segments_latest}
+  value=active_customers
+  title="Active Customers (2025)"
+  comparison=active_customers_yoy_growth
+  comparisonFmt=pct1
+  comparisonTitle="vs 2024"
+  comparisonTrend=inverse
+/>
+
+<BigValue 
+  data={customer_segments_latest}
+  value=active_revenue
+  title="Active Customers Revenue (2025)"
+  comparison=active_revenue_yoy_growth
+  comparisonFmt=pct1
+  comparisonTitle="vs 2024"
+  comparisonTrend=inverse
+  format="$,.0f"
+/>
+
+### New Customers
+<BigValue 
+  data={customer_segments_latest}
+  value=new_customers
+  title="New Customers (2025)"
+  comparison=new_customers_yoy_growth
+  comparisonFmt=pct1
+  comparisonTitle="vs 2024"
+  comparisonTrend=inverse
+/>
+
+<BigValue 
+  data={customer_segments_latest}
+  value=new_revenue
+  title="New Customers Revenue (2025)"
+  comparison=new_revenue_yoy_growth
+  comparisonFmt=pct1
+  comparisonTitle="vs 2024"
+  comparisonTrend=inverse
+  format="$,.0f"
+/>
+
+### Returning Customers
+<BigValue 
+  data={customer_segments_latest}
+  value=returning_customers
+  title="Returning Customers (2025)"
+  comparison=returning_customers_yoy_growth
+  comparisonFmt=pct1
+  comparisonTitle="vs 2024"
+  comparisonTrend=inverse
+/>
+
+<BigValue 
+  data={customer_segments_latest}
+  value=returning_revenue
+  title="Returning Customers Revenue (2025)"
+  comparison=returning_revenue_yoy_growth
+  comparisonFmt=pct1
+  comparisonTitle="vs 2024"
+  comparisonTrend=inverse
+  format="$,.0f"
+/>
+
+<DataTable 
+  data={customer_segments_growth}
+  search={false}
+  rowNavigation={false}
+  columns={[
+    {id: "year", header: "Year"},
+    
+    // Active Customers
+    {id: "active_customers", header: "Active Customers", format: ","},
+    {id: "active_customers_yoy_growth", header: "Growth", format: "pct1"},
+    {id: "active_revenue", header: "Revenue", format: "$,.0f"},
+    {id: "active_revenue_yoy_growth", header: "Revenue Growth", format: "pct1"},
+    
+    // New Customers
+    {id: "new_customers", header: "New Customers", format: ","},
+    {id: "new_customers_yoy_growth", header: "Growth", format: "pct1"},
+    {id: "new_revenue", header: "Revenue", format: "$,.0f"},
+    {id: "new_revenue_yoy_growth", header: "Revenue Growth", format: "pct1"},
+    
+    // Returning Customers
+    {id: "returning_customers", header: "Returning Customers", format: ","},
+    {id: "returning_customers_yoy_growth", header: "Growth", format: "pct1"},
+    {id: "returning_revenue", header: "Revenue", format: "$,.0f"},
+    {id: "returning_revenue_yoy_growth", header: "Revenue Growth", format: "pct1"}
+  ]}
+/>
+
+<!-- ## Year-over-Year Growth Analysis
+
+```sql yoy_data
+SELECT * FROM yoy_growth_analysis
+```
+
+<DataTable 
+  data={yoy_data}
+  search={false}
+  rowNavigation={false}
+  columns={[
+    {id: "year", header: "Year"},
+    {id: "unique_customers", header: "Unique Customers", format: ","},
+    {id: "total_orders", header: "Total Orders", format: ","},
+    {id: "total_revenue", header: "Total Revenue", format: "$,.0f",
+     contentType: 'colorscale',
+     colorscale: {
+       colors: ['#ce5050','white','#6db678'],
+       min: 0
+     }
+    }
+  ]}
+/> -->
+
+```sql yoy_growth
+WITH growth_rates AS (
+    SELECT 
+        year,
+        unique_customers,
+        total_orders,
+        total_revenue,
+        LAG(unique_customers) OVER (ORDER BY year) as prev_year_customers,
+        LAG(total_orders) OVER (ORDER BY year) as prev_year_orders,
+        LAG(total_revenue) OVER (ORDER BY year) as prev_year_revenue
+    FROM yoy_data
+    WHERE year != 'All Years'
+)
+SELECT 
+    year,
+    unique_customers,
+    ROUND((unique_customers - prev_year_customers) * 100.0 / NULLIF(prev_year_customers, 0), 1) as customer_growth_pct,
+    total_orders,
+    ROUND((total_orders - prev_year_orders) * 100.0 / NULLIF(prev_year_orders, 0), 1) as orders_growth_pct,
+    total_revenue,
+    ROUND((total_revenue - prev_year_revenue) * 100.0 / NULLIF(prev_year_revenue, 0), 1) as revenue_growth_pct
+FROM growth_rates
+WHERE prev_year_customers IS NOT NULL
+```
+
+
+```sql lead_metrics
+WITH lead_data AS (
+    SELECT 
+        rsm_name,
+        SUM(CAST(new_leads_engaged_no_order AS INTEGER)) as total_leads,
+        SUM(CAST(calls AS INTEGER)) as total_calls,
+        SUM(CAST(meetings AS INTEGER)) as total_meetings
+    FROM leads_engagement
+    GROUP BY rsm_name
+),
+customer_data AS (
+    SELECT 
+        rsm_name,
+        SUM(CASE WHEN customer_segment IN ('Repeat (2025)', 'One-Timer (2025)') THEN CAST(customers AS INTEGER) ELSE 0 END) as new_customers_2025
+    FROM rsm_performance_data
+    GROUP BY rsm_name
+)
+SELECT
+    SUM(ld.total_leads) as total_leads,
+    SUM(ld.total_calls) as total_lead_calls,
+    SUM(ld.total_meetings) as total_lead_meetings,
+    SUM(cd.new_customers_2025) as total_new_customers,
+    ROUND(SUM(cd.new_customers_2025) / NULLIF(SUM(cd.new_customers_2025) + SUM(ld.total_leads), 0) * 100, 1) as overall_conversion_rate,
+    ROUND(SUM(ld.total_calls + ld.total_meetings) / NULLIF(SUM(ld.total_leads), 0), 1) as avg_touchpoints_per_lead
+FROM lead_data ld
+LEFT JOIN customer_data cd ON ld.rsm_name = cd.rsm_name
+```
+
+<!-- <BigValue
+  data={lead_metrics}
+  value=total_new_customers
+  title="New Customers (2025)"
+  format=","
+/> -->
+
+## 2025 Revenue from Active RSMs (excluding SDs)
 
 ```sql rsm_data
 SELECT * FROM rsm_performance_data  
-WHERE rsm_name IS NOT NULL
-AND rsm_name NOT IN ('Suzi Hansen', 'Malek Bishawi', 'Kristina Banister')
+```
+
+```sql customer_segments_2024
+SELECT * FROM customer_segment_analysis
+```
+
+```sql growth_metrics
+WITH revenue_2024 AS (
+    SELECT SUM(total_revenue) as revenue_2024
+    FROM customer_segment_analysis
+),
+revenue_2025 AS (
+    SELECT SUM(CAST(revenue AS DOUBLE)) as revenue_2025
+    FROM rsm_performance_data
+)
+SELECT 
+    r24.revenue_2024,
+    r25.revenue_2025,
+    ROUND(((r25.revenue_2025 - r24.revenue_2024) / NULLIF(r24.revenue_2024, 0)) * 100, 2) as yoy_growth_pct
+FROM revenue_2024 r24
+CROSS JOIN revenue_2025 r25
 ```
 
 ```sql total_metrics
@@ -39,35 +246,18 @@ FROM ${rsm_data}
   format="$,.2f"
 />
 
-```sql lead_metrics
-WITH lead_data AS (
-    SELECT 
-        rsm_name,
-        SUM(CAST(new_leads_engaged_no_order AS INTEGER)) as total_leads,
-        SUM(CAST(calls AS INTEGER)) as total_calls,
-        SUM(CAST(meetings AS INTEGER)) as total_meetings
-    FROM leads_engagement
-    WHERE rsm_name IS NOT NULL
-    AND rsm_name NOT IN ('Suzi Hansen', 'Malek Bishawi', 'Kristina Banister')
-    GROUP BY rsm_name
-),
-customer_data AS (
-    SELECT 
-        rsm_name,
-        SUM(CASE WHEN customer_segment IN ('Repeat (2025)', 'One-Timer (2025)') THEN CAST(customers AS INTEGER) ELSE 0 END) as new_customers_2025
-    FROM rsm_performance_data
-    GROUP BY rsm_name
-)
-SELECT
-    SUM(ld.total_leads) as total_leads,
-    SUM(ld.total_calls) as total_lead_calls,
-    SUM(ld.total_meetings) as total_lead_meetings,
-    SUM(cd.new_customers_2025) as total_new_customers,
-    ROUND(SUM(cd.new_customers_2025) / NULLIF(SUM(cd.new_customers_2025) + SUM(ld.total_leads), 0) * 100, 1) as overall_conversion_rate,
-    ROUND(SUM(ld.total_calls + ld.total_meetings) / NULLIF(SUM(ld.total_leads), 0), 1) as avg_touchpoints_per_lead
-FROM lead_data ld
-LEFT JOIN customer_data cd ON ld.rsm_name = cd.rsm_name
-```
+<!-- <BigValue
+  data={growth_metrics}
+  value="yoy_growth_pct"
+  title="YoY Revenue Growth (2024-2025)"
+  format=".1f"
+  suffix="%"
+  comparison={{
+    value: 0,
+    label: "vs 2024",
+    trend: "inverse"
+  }}
+/> -->
 
 <BigValue
   data={lead_metrics}
@@ -75,14 +265,6 @@ LEFT JOIN customer_data cd ON ld.rsm_name = cd.rsm_name
   title="Total Engaged Leads (No Orders)"
   format=","
 />
-
-<!-- <BigValue
-  data={lead_metrics}
-  value=total_new_customers
-  title="New Customers (2025)"
-  format=","
-/> -->
-
 
 ## EXECUTIVE SUMMARY
 
@@ -400,7 +582,7 @@ FROM growth_rates
 WHERE growth_rate IS NOT NULL
 ```
 
-<BigValue
+<!-- <BigValue
   data={total_new_customers}
   value=total_new_customers
   title="Total New Customers (2025)"
@@ -419,7 +601,7 @@ WHERE growth_rate IS NOT NULL
   value=repeat_customers
   title="Repeat Customers"
   format=","
-/>
+/> -->
 
 <BigValue
   data={mom_growth_rate}
@@ -896,23 +1078,61 @@ ORDER BY month_date, customer_segment, support_status
 ## RSM Performance Analysis
 
 ```sql rsm_summary_by_support
+WITH base_data AS (
+    SELECT 
+        rsm_name,
+        support_status,
+        customer_segment,
+        -- Handle empty strings and NULL values for revenue
+        CASE 
+            WHEN TRIM(COALESCE(revenue, '')) = '' THEN 0 
+            WHEN TRY_CAST(revenue AS DOUBLE) IS NULL THEN 0
+            ELSE CAST(revenue AS DOUBLE)
+        END as revenue_value,
+        -- Handle empty strings and NULL values for customers
+        CASE 
+            WHEN TRIM(COALESCE(customers, '')) = '' THEN 0 
+            WHEN TRY_CAST(customers AS INTEGER) IS NULL THEN 0
+            ELSE CAST(customers AS INTEGER)
+        END as customer_count
+    FROM ${rsm_data}
+    WHERE customer_segment IN ('Repeat (2025)', 'One-Timer (2025)')
+)
 SELECT 
     rsm_name,
     support_status,
-    SUM(CASE WHEN customer_segment IN ('Repeat (2025)', 'One-Timer (2025)') THEN CAST(revenue AS DOUBLE) ELSE 0 END) as revenue,
-    SUM(CASE WHEN customer_segment IN ('Repeat (2025)', 'One-Timer (2025)') THEN CAST(customers AS INTEGER) ELSE 0 END) as customers
-FROM ${rsm_data}
-WHERE customer_segment IN ('Repeat (2025)', 'One-Timer (2025)')
+    SUM(revenue_value) as revenue,
+    SUM(customer_count) as customers
+FROM base_data
 GROUP BY rsm_name, support_status
 ORDER BY rsm_name, support_status
 ```
 
 ```sql rsm_summary
+WITH base_data AS (
+    SELECT 
+        rsm_name,
+        customer_segment,
+        -- Handle empty strings and NULL values for revenue
+        CASE 
+            WHEN TRIM(COALESCE(revenue, '')) = '' THEN 0 
+            WHEN TRY_CAST(revenue AS DOUBLE) IS NULL THEN 0
+            ELSE CAST(revenue AS DOUBLE)
+        END as revenue_value,
+        -- Handle empty strings and NULL values for customers
+        CASE 
+            WHEN TRIM(COALESCE(customers, '')) = '' THEN 0 
+            WHEN TRY_CAST(customers AS INTEGER) IS NULL THEN 0
+            ELSE CAST(customers AS INTEGER)
+        END as customer_count
+    FROM ${rsm_data}
+    WHERE customer_segment IN ('Repeat (2025)', 'One-Timer (2025)')
+)
 SELECT 
     rsm_name,
-    SUM(CASE WHEN customer_segment IN ('Repeat (2025)', 'One-Timer (2025)') THEN CAST(revenue AS DOUBLE) ELSE 0 END) as total_revenue,
-    SUM(CASE WHEN customer_segment IN ('Repeat (2025)', 'One-Timer (2025)') THEN CAST(customers AS INTEGER) ELSE 0 END) as total_customers
-FROM ${rsm_data}
+    SUM(revenue_value) as total_revenue,
+    SUM(customer_count) as total_customers
+FROM base_data
 GROUP BY rsm_name
 ORDER BY total_revenue DESC
 ```
@@ -1190,8 +1410,6 @@ WITH lead_data AS (
         rsm_name,
         SUM(CAST(new_leads_engaged_no_order AS INTEGER)) as total_leads
     FROM leads_engagement
-    WHERE rsm_name IS NOT NULL
-    AND rsm_name NOT IN ('Suzi Hansen', 'Malek Bishawi', 'Kristina Banister')
     GROUP BY rsm_name
 ),
 customer_data AS (

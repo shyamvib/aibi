@@ -34,7 +34,7 @@ all_2025_customers AS (
         toString(hubspot_id) as contact_id,
         sales_name as rsm_name,
         state
-    FROM business_intelligence.integrated_orders
+    FROM business_intelligence.canonical_integrated_orders
     WHERE EXTRACT(YEAR FROM order_date) = 2025
     AND hubspot_id IS NOT NULL
     AND sales_name IS NOT NULL
@@ -65,7 +65,7 @@ FROM all_2025_customers ac
 LEFT JOIN first_orders_2025 fo ON toString(fo.contact_id) = ac.contact_id
 LEFT JOIN repeat_customers rc ON toString(rc.contact_id) = ac.contact_id
 LEFT JOIN supported_customers sc ON toString(sc.contact_id) = ac.contact_id
-INNER JOIN business_intelligence.integrated_orders io 
+INNER JOIN business_intelligence.canonical_integrated_orders io 
     ON toString(io.hubspot_id) = ac.contact_id
 LEFT JOIN calls_meetings cm 
     ON toString(cm.contact_id) = ac.contact_id 

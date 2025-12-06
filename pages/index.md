@@ -11,6 +11,8 @@ Welcome to the RSM Performance Dashboard. This guide will help you interpret the
 - [RSM Dashboard](/rsm_dashboard) - Overview of all RSMs with key metrics and comparisons
 - [RSM Detail](/rsm_detail) - In-depth analysis of individual RSM performance
 
+> **Note**: The following RSMs are excluded from the dashboard: Suzi Hansen, Malek Bishawi, and Kristina Banister.
+
 ## How to Interpret the RSM Detail Page
 
 The RSM Detail page provides comprehensive insights into an individual RSM's performance across different customer segments and engagement activities. Here's how to interpret the key metrics and correlations:
