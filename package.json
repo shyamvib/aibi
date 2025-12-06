@@ -4,7 +4,7 @@
   "scripts": {
     "build": "EVIDENCE_BUILD_DIR=./build/aibi evidence build",
     "build:strict": "evidence build:strict",
-    "dev": "evidence dev --open /",
+    "dev": "CHOKIDAR_USEPOLLING=true CHOKIDAR_INTERVAL=100 NODE_OPTIONS='--max-old-space-size=4096' evidence dev --open / --host 0.0.0.0 --port 3001",
     "test": "evidence build",
     "sources": "evidence sources",
     "sources:strict": "evidence sources --strict",

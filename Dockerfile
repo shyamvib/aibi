@@ -15,6 +15,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
+RUN npm install -g cross-env
 RUN npm install
 
 # Copy project files
